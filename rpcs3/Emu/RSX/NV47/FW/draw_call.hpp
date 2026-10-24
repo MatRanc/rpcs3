@@ -59,7 +59,8 @@ namespace rsx
 			// Update all barrier draw ids after this one
 			for (auto& barrier : draw_command_barriers)
 			{
-				if (barrier.draw_id >= index)
+				// Execution barriers on the range we insert in front of open the current segment, so they must stay ahead of the new range
+				if (barrier.draw_id > index || (barrier.draw_id == index && barrier.type == primitive_restart_barrier))
 				{
 					barrier.draw_id++;
 				}
@@ -70,7 +71,8 @@ namespace rsx
 
 	public:
 		primitive_type primitive{};
-		draw_command command{};
+		mutable draw_command command{};     // Command type of the range being executed. Updated by draw_command_change_barrier while rendering
+		draw_command initial_command{};     // Command type of the first range, restored when execution begins
 
 		bool is_immediate_draw{};          // Set if part of the draw is submitted via push registers
 		bool is_disjoint_primitive{};      // Set if primitive type does not rely on adjacency information
@@ -83,6 +85,27 @@ namespace rsx
 		void operator()(utils::serial& ar);
 
 		void insert_command_barrier(command_barrier_type type, u32 arg0, u32 arg1 = 0, u32 register_index = 0);
+
+		/**
+		 * Set the command type for the next appended range.
+		 * Games can mix DRAW_ARRAYS and DRAW_INDEX_ARRAY in one BEGIN/END, so a change splits the clause with a barrier.
+		 */
+		void set_command(draw_command type)
+		{
+			const bool switchable = (type == draw_command::array || type == draw_command::indexed) &&
+				(command == draw_command::array || command == draw_command::indexed);
+
+			if (switchable && type != command && !draw_command_ranges.empty())
+			{
+				insert_command_barrier(draw_command_change_barrier, static_cast<u32>(type));
+			}
+			else if (draw_command_ranges.empty())
+			{
+				initial_command = type;
+			}
+
+			command = type;
+		}
 
 		/**
 		 * Optimize commands for rendering
@@ -233,6 +256,11 @@ namespace rsx
 
 		void begin()
 		{
+			if (initial_command != draw_command::none)
+			{
+				command = initial_command;
+			}
+
 			current_range_index = 0;
 			current_barrier_it = draw_command_barriers.begin();
 			is_rendering = true;

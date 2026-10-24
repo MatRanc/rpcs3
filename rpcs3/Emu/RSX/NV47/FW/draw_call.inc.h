@@ -19,7 +19,8 @@ namespace rsx
 		index_base_modifier_barrier,
 		vertex_array_offset_modifier_barrier,
 		transform_constant_load_modifier_barrier,
-		transform_constant_update_barrier
+		transform_constant_update_barrier,
+		draw_command_change_barrier
 	};
 
 	enum command_execution_flags : u32

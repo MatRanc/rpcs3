@@ -130,6 +130,7 @@ namespace rsx
 		primitive = type;
 		primitive_barrier_enable = false;
 		is_trivial_instanced_draw = false;
+		initial_command = draw_command::none;
 
 		draw_command_ranges.clear();
 		draw_command_barriers.clear();
@@ -241,6 +242,13 @@ namespace rsx
 
 				nv4097::set_transform_constant::batch_decode(ctx, NV4097_SET_TRANSFORM_CONSTANT + barrier.index, buffer, notify);
 				result |= transform_constants_changed;
+				break;
+			}
+			case draw_command_change_barrier:
+			{
+				// Switch between array and indexed draws. Vertex inputs must be re-analysed for the new command
+				command = static_cast<draw_command>(barrier.arg0);
+				result |= vertex_arrays_changed;
 				break;
 			}
 			default:

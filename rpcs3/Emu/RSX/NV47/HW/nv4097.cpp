@@ -420,7 +420,7 @@ namespace rsx
 
 		void draw_arrays(context* /*rsx*/, u32 /*reg*/, u32 arg)
 		{
-			REGS(ctx)->current_draw_clause.command = rsx::draw_command::array;
+			REGS(ctx)->current_draw_clause.set_command(rsx::draw_command::array);
 			rsx::registers_decoder<NV4097_DRAW_ARRAYS>::decoded_type v(arg);
 
 			REGS(ctx)->current_draw_clause.append(v.start(), v.count());
@@ -428,7 +428,7 @@ namespace rsx
 
 		void draw_index_array(context* /*rsx*/, u32 /*reg*/, u32 arg)
 		{
-			REGS(ctx)->current_draw_clause.command = rsx::draw_command::indexed;
+			REGS(ctx)->current_draw_clause.set_command(rsx::draw_command::indexed);
 			rsx::registers_decoder<NV4097_DRAW_INDEX_ARRAY>::decoded_type v(arg);
 
 			REGS(ctx)->current_draw_clause.append(v.start(), v.count());
