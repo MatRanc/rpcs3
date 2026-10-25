@@ -3483,6 +3483,8 @@ error_code sceNpLookupNpId(s32 transId, vm::cptr<SceNpOnlineId> onlineId, vm::pt
 	return CELL_OK;
 }
 
+static error_code complete_lookup_async(s32 transId, error_code result);
+
 error_code sceNpLookupNpIdAsync(s32 transId, vm::cptr<SceNpOnlineId> onlineId, vm::ptr<SceNpId> npId, s32 prio, vm::ptr<void> option)
 {
 	sceNp.todo("sceNpLookupNpIdAsync(transId=%d, onlineId=*0x%x, npId=*0x%x, prio=%d, option=*0x%x)", transId, onlineId, npId, prio, option);
@@ -3513,7 +3515,8 @@ error_code sceNpLookupNpIdAsync(s32 transId, vm::cptr<SceNpOnlineId> onlineId, v
 	memset(npId.get_ptr(), 0, sizeof(SceNpId));
 	memcpy(npId->handle.data, onlineId->data, sizeof(npId->handle.data) - 1);
 
-	return CELL_OK;
+	// Complete the transaction so sceNpLookupPollAsync/WaitAsync don't report it as busy forever
+	return complete_lookup_async(transId, CELL_OK);
 }
 
 static error_code lookup_user_profile(s32 transId, s32 avatarSizeType, vm::cptr<SceNpId> npId, vm::ptr<SceNpUserInfo> userInfo, vm::ptr<SceNpAboutMe> aboutMe,
